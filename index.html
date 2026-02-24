@@ -1,52 +1,118 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ProjSpider User Creation</title>
+  <title>Project Spider User Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input { margin: 5px 0; padding: 5px; width: 200px; }
+    button { margin: 5px 5px 5px 0; padding: 5px 10px; }
+    #files { margin-top: 10px; }
+  </style>
 </head>
 <body>
-<h2>Create User</h2>
-<form id="userForm">
-  Username: <input type="text" name="username" required>
-  <button type="submit">Create</button>
-</form>
+<pre>
+  / _ \
+\_\(_)/_/
+ _//o\\_ 
+  /   \
+</pre>
+    
+  <h2>Sign Up / Log In</h2>
+  <input id="username" placeholder="Username" />
+  <br/>
+  <input id="password" placeholder="Password" type="password" />
+  <br/>
+  <button onclick="signup()">Sign Up</button>
+  <button onclick="login()">Log In</button>
 
-<div id="response"></div>
+  <h3>Upload a file:</h3>
+  <input type="file" id="fileInput" />
+  <button onclick="uploadFile()">Upload</button>
 
-<script>
-document.getElementById("userForm").onsubmit = async function(e){
-    e.preventDefault();
-    const username = e.target.username.value.trim();
+  <h3>Files in your bucket:</h3>
+  <ul id="files"></ul>
 
-    if(!username){
-        alert("Please enter a username");
-        return;
+  <script>
+    const API_URL = "https://YOUR_API_GATEWAY_ID.execute-api.us-east-1.amazonaws.com/user"; // <-- replace this
+    let currentBucket = ""; // will store logged-in user's bucket
+
+    async function signup() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      if(!username || !password) { alert("Enter both username and password."); return; }
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "signup", username, password })
+      });
+      const data = await res.json();
+      alert(JSON.stringify(data));
+      if(data.bucket) currentBucket = data.bucket;
     }
 
-    try {
-        const res = await fetch("https://c0gyxswwyi.execute-api.us-east-2.amazonaws.com/spoder/create-user", {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({ username }),
-            mode: "cors"   // ensures browser uses CORS
+    async function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      if(!username || !password) { alert("Enter both username and password."); return; }
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login", username, password })
+      });
+      const data = await res.json();
+
+      if(data.files) {
+        currentBucket = data.bucket;
+        const ul = document.getElementById("files");
+        ul.innerHTML = "";
+        data.files.forEach(f => {
+          const li = document.createElement("li");
+          li.textContent = f;
+          ul.appendChild(li);
+        });
+      } else if(data.error) {
+        alert("Error: " + data.error);
+      } else {
+        alert(JSON.stringify(data));
+      }
+    }
+
+    async function uploadFile() {
+      const fileInput = document.getElementById("fileInput");
+      if(!fileInput.files.length) { alert("Select a file first."); return; }
+      if(!currentBucket) { alert("Log in first."); return; }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = async function() {
+        const fileContent = reader.result;
+
+        // send to Lambda
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "upload",
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value,
+            bucket: currentBucket,
+            filename: file.name,
+            content: fileContent.split(",")[1] // base64 data
+          })
         });
 
-        if (!res.ok){
-            throw new Error("Network response was not ok: " + res.status);
-        }
-
         const data = await res.json();
-        document.getElementById("response").innerText = JSON.stringify(data, null, 2);
+        alert(JSON.stringify(data));
+        if(data.success) login(); // refresh file list
+      };
 
-    } catch(err) {
-        console.error("Fetch error:", err);
-        document.getElementById("response").innerText = "Error: " + err;
+      reader.readAsDataURL(file); // converts file to base64
     }
-};
-</script>
+  </script>
 </body>
-
 </html>
-
