@@ -23,7 +23,7 @@ document.getElementById("userForm").onsubmit = async function(e){
     }
 
     try {
-        const res = await fetch("https://<YOUR_API_GATEWAY_URL>/create-user", {
+        const res = await fetch("https://c0gyxswwyi.execute-api.us-east-2.amazonaws.com/spoder/create-user", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
@@ -49,3 +49,4 @@ document.getElementById("userForm").onsubmit = async function(e){
 </body>
 
 </html>
+
