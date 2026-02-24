@@ -15,20 +15,37 @@
 <script>
 document.getElementById("userForm").onsubmit = async function(e){
     e.preventDefault();
-    const username = e.target.username.value;
+    const username = e.target.username.value.trim();
+
+    if(!username){
+        alert("Please enter a username");
+        return;
+    }
 
     try {
-        const res = await fetch("https://c0gyxswwyi.execute-api.us-east-2.amazonaws.com/spoder/create-user", {
+        const res = await fetch("https://<YOUR_API_GATEWAY_URL>/create-user", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username })
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({ username }),
+            mode: "cors"   // ensures browser uses CORS
         });
+
+        if (!res.ok){
+            throw new Error("Network response was not ok: " + res.status);
+        }
+
         const data = await res.json();
         document.getElementById("response").innerText = JSON.stringify(data, null, 2);
+
     } catch(err) {
+        console.error("Fetch error:", err);
         document.getElementById("response").innerText = "Error: " + err;
     }
 };
 </script>
 </body>
+
 </html>
