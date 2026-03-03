@@ -4,12 +4,31 @@
   <title>Project Spider User Portal</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
+
+    .container {
+      display: flex;
+    }
+
+    .left {
+      width: 300px;
+      margin-right: 50px;
+    }
+
+    .right {
+      flex: 1;
+    }
+
     input { margin: 5px 0; padding: 5px; width: 200px; }
     button { margin: 5px 5px 5px 0; padding: 5px 10px; }
     #files { margin-top: 10px; }
   </style>
 </head>
 <body>
+
+<div class="container">
+
+  <!-- LEFT SIDE (UNCHANGED CONTENT) -->
+  <div class="left">
 <pre>
 PROJECT
   / _ \
@@ -26,97 +45,216 @@ SPIDER
   <br/>
   <button onclick="signup()">Sign Up</button>
   <button onclick="login()">Log In</button>
+  </div>
 
-  <h3>Upload a file:</h3>
-  <input type="file" id="fileInput" />
-  <button onclick="uploadFile()">Upload</button>
+  <!-- RIGHT SIDE (FUNCTIONAL PARTS MOVED HERE) -->
+  <div class="right">
+    <h3>Upload a file:</h3>
+    <input type="file" id="fileInput" />
+    <button onclick="uploadFile()">Upload</button>
+    <!-- NEW LARGE FILE BUTTON -->
+    <button onclick="uploadMultipart()">Upload Large File (5MB+)</button>
 
-  <h3>Files in your bucket:</h3>
-  <ul id="files"></ul>
+    <h3>Files in your bucket:</h3>
+    <ul id="files"></ul>
+  </div>
 
-  <script>
-    const API_URL = "https://eu4gu0tc83.execute-api.us-east-2.amazonaws.com/spoder/user"; // <-- replace this
-    let currentBucket = ""; // will store logged-in user's bucket
+</div>
 
-    async function signup() {
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
+<script>
+  const API_URL = "https://eu4gu0tc83.execute-api.us-east-2.amazonaws.com/spoder/user";
+  let currentBucket = "";
 
-      if(!username || !password) { alert("Enter both username and password."); return; }
+  async function signup() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    if(!username || !password) { alert("Enter both username and password."); return; }
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "signup", username, password })
+    });
+
+    const data = await res.json();
+    alert(JSON.stringify(data));
+    if(data.bucket) currentBucket = data.bucket;
+  }
+
+  async function login() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    if(!username || !password) { alert("Enter both username and password."); return; }
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "login", username, password })
+    });
+
+    const data = await res.json();
+
+    if(data.files) {
+      currentBucket = data.bucket;
+      const ul = document.getElementById("files");
+      ul.innerHTML = "";
+
+      data.files.forEach(f => {
+        const li = document.createElement("li");
+
+        /* ADDED VIEW + DELETE BUTTONS */
+        li.innerHTML = `
+          ${f}
+          <button onclick="viewFile('${f}')">View</button>
+          <button onclick="deleteFile('${f}')">Delete</button>
+        `;
+
+        ul.appendChild(li);
+      });
+
+    } else if(data.error) {
+      alert("Error: " + data.error);
+    } else {
+      alert(JSON.stringify(data));
+    }
+  }
+
+  async function uploadFile() {
+    const fileInput = document.getElementById("fileInput");
+    if(!fileInput.files.length) { alert("Select a file first."); return; }
+    if(!currentBucket) { alert("Log in first."); return; }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async function() {
+      const fileContent = reader.result;
 
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "signup", username, password })
+        body: JSON.stringify({
+          action: "upload",
+          username: document.getElementById("username").value,
+          password: document.getElementById("password").value,
+          bucket: currentBucket,
+          filename: file.name,
+          content: fileContent.split(",")[1]
+        })
       });
+
       const data = await res.json();
       alert(JSON.stringify(data));
-      if(data.bucket) currentBucket = data.bucket;
-    }
+      if(data.success) login();
+    };
 
-    async function login() {
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
+    reader.readAsDataURL(file);
+  }
 
-      if(!username || !password) { alert("Enter both username and password."); return; }
+  /* ===============================
+     NEW FUNCTIONS ADDED BELOW
+     =============================== */
 
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "login", username, password })
+  async function viewFile(filename){
+    const res = await fetch(API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        action:"get_file_url",
+        bucket:currentBucket,
+        filename
+      })
+    });
+    const data = await res.json();
+    window.open(data.url, "_blank");
+  }
+
+  async function deleteFile(filename){
+    await fetch(API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        action:"delete",
+        bucket:currentBucket,
+        filename
+      })
+    });
+    login();
+  }
+
+  async function uploadMultipart(){
+
+    const fileInput = document.getElementById("fileInput");
+    if(!fileInput.files.length) { alert("Select a file first."); return; }
+    if(!currentBucket) { alert("Log in first."); return; }
+
+    const file = fileInput.files[0];
+
+    const startRes = await fetch(API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        action:"start_multipart",
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value,
+        filename:file.name
+      })
+    });
+
+    const {uploadId} = await startRes.json();
+
+    const chunkSize = 5 * 1024 * 1024;
+    const parts=[];
+    let partNumber=1;
+
+    for(let start=0;start<file.size;start+=chunkSize){
+      const chunk = file.slice(start,start+chunkSize);
+
+      const urlRes = await fetch(API_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          action:"get_presigned_part",
+          uploadId,
+          filename:file.name,
+          partNumber,
+          bucket:currentBucket
+        })
       });
-      const data = await res.json();
 
-      if(data.files) {
-        currentBucket = data.bucket;
-        const ul = document.getElementById("files");
-        ul.innerHTML = "";
-        data.files.forEach(f => {
-          const li = document.createElement("li");
-          li.textContent = f;
-          ul.appendChild(li);
-        });
-      } else if(data.error) {
-        alert("Error: " + data.error);
-      } else {
-        alert(JSON.stringify(data));
-      }
+      const {url} = await urlRes.json();
+
+      const uploadRes = await fetch(url,{
+        method:"PUT",
+        body:chunk
+      });
+
+      parts.push({
+        ETag: uploadRes.headers.get("ETag").replace(/"/g,""),
+        PartNumber: partNumber
+      });
+
+      partNumber++;
     }
 
-    async function uploadFile() {
-      const fileInput = document.getElementById("fileInput");
-      if(!fileInput.files.length) { alert("Select a file first."); return; }
-      if(!currentBucket) { alert("Log in first."); return; }
+    await fetch(API_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        action:"complete_multipart",
+        bucket:currentBucket,
+        filename:file.name,
+        uploadId,
+        parts
+      })
+    });
 
-      const file = fileInput.files[0];
-      const reader = new FileReader();
+    alert("Large file upload complete!");
+    login();
+  }
 
-      reader.onload = async function() {
-        const fileContent = reader.result;
-
-        // send to Lambda
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "upload",
-            username: document.getElementById("username").value,
-            password: document.getElementById("password").value,
-            bucket: currentBucket,
-            filename: file.name,
-            content: fileContent.split(",")[1] // base64 data
-          })
-        });
-
-        const data = await res.json();
-        alert(JSON.stringify(data));
-        if(data.success) login(); // refresh file list
-      };
-
-      reader.readAsDataURL(file); // converts file to base64
-    }
-  </script>
+</script>
 </body>
 </html>
-
-
