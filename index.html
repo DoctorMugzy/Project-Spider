@@ -27,7 +27,7 @@
 
 <div class="container">
 
-  <!-- LEFT SIDE (UNCHANGED CONTENT) -->
+  <!-- LEFT SIDE -->
   <div class="left">
 <pre>
 PROJECT
@@ -43,16 +43,18 @@ SPIDER
   <br/>
   <input id="password" placeholder="Password" type="password" />
   <br/>
+  <input id="uid" placeholder="UID (Required for Login)" />
+  <button onclick="copyUID()">Copy UID</button>
+  <br/>
   <button onclick="signup()">Sign Up</button>
   <button onclick="login()">Log In</button>
   </div>
 
-  <!-- RIGHT SIDE (FUNCTIONAL PARTS MOVED HERE) -->
+  <!-- RIGHT SIDE -->
   <div class="right">
     <h3>Upload a file:</h3>
     <input type="file" id="fileInput" />
     <button onclick="uploadFile()">Upload</button>
-    <!-- NEW LARGE FILE BUTTON -->
     <button onclick="uploadMultipart()">Upload Large File (5MB+)</button>
 
     <h3>Files in your bucket:</h3>
@@ -69,7 +71,10 @@ SPIDER
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
 
-    if(!username || !password) { alert("Enter both username and password."); return; }
+    if(!username || !password) { 
+      alert("Enter both username and password."); 
+      return; 
+    }
 
     const res = await fetch(API_URL, {
       method: "POST",
@@ -79,19 +84,29 @@ SPIDER
 
     const data = await res.json();
     alert(JSON.stringify(data));
+
     if(data.bucket) currentBucket = data.bucket;
+
+    /* NEW: Auto-fill UID after signup */
+    if(data.uid){
+      document.getElementById("uid").value = data.uid;
+    }
   }
 
   async function login() {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
+    const uid = document.getElementById("uid").value;
 
-    if(!username || !password) { alert("Enter both username and password."); return; }
+    if(!username || !password || !uid) { 
+      alert("Enter username, password, and UID."); 
+      return; 
+    }
 
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "login", username, password })
+      body: JSON.stringify({ action: "login", username, password, uid })
     });
 
     const data = await res.json();
@@ -104,7 +119,6 @@ SPIDER
       data.files.forEach(f => {
         const li = document.createElement("li");
 
-        /* ADDED VIEW + DELETE BUTTONS */
         li.innerHTML = `
           ${f}
           <button onclick="viewFile('${f}')">View</button>
@@ -139,6 +153,7 @@ SPIDER
           action: "upload",
           username: document.getElementById("username").value,
           password: document.getElementById("password").value,
+          uid: document.getElementById("uid").value,
           bucket: currentBucket,
           filename: file.name,
           content: fileContent.split(",")[1]
@@ -152,10 +167,6 @@ SPIDER
 
     reader.readAsDataURL(file);
   }
-
-  /* ===============================
-     NEW FUNCTIONS ADDED BELOW
-     =============================== */
 
   async function viewFile(filename){
     const res = await fetch(API_URL,{
@@ -199,6 +210,7 @@ SPIDER
         action:"start_multipart",
         username: document.getElementById("username").value,
         password: document.getElementById("password").value,
+        uid: document.getElementById("uid").value,
         filename:file.name
       })
     });
@@ -253,6 +265,19 @@ SPIDER
 
     alert("Large file upload complete!");
     login();
+  }
+
+  /* NEW COPY FUNCTION */
+  function copyUID() {
+    const uidField = document.getElementById("uid");
+    if(!uidField.value){
+      alert("No UID to copy.");
+      return;
+    }
+    uidField.select();
+    uidField.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    alert("UID copied to clipboard!");
   }
 
 </script>
