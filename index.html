@@ -10,11 +10,11 @@
 
     .container {
       display: flex;
+      gap: 50px;
     }
 
     .left {
       width: 300px;
-      margin-right: 50px;
       background-color: #f5f5dc; /* Beige */
       padding: 20px;
       border-radius: 8px;
@@ -99,46 +99,56 @@ SPIDER
   // SIGNUP
   // -----------------------------
   async function signup() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    if(!username || !password) { alert("Enter both username and password."); return; }
+    if (!username || !password) { alert("Enter both username and password."); return; }
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "signup", username, password })
-    });
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "signup", username, password })
+      });
+      const data = await res.json();
+      alert(JSON.stringify(data));
 
-    const data = await res.json();
-    alert(JSON.stringify(data));
+      if (data.bucket) currentBucket = data.bucket;
+      if (data.uid) document.getElementById("uid").value = data.uid;
 
-    if(data.bucket) currentBucket = data.bucket;
-    if(data.uid) document.getElementById("uid").value = data.uid;
+    } catch (err) {
+      alert("Signup error: " + err.message);
+      console.error(err);
+    }
   }
 
   // -----------------------------
   // LOGIN
   // -----------------------------
   async function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const uid = document.getElementById("uid").value;
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const uid = document.getElementById("uid").value.trim();
 
-    if(!username || !password || !uid) { alert("Enter username, password, and UID."); return; }
+    if (!username || !password || !uid) { alert("Enter username, password, and UID."); return; }
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "login", username, password, uid })
-    });
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login", username, password, uid })
+      });
+      const data = await res.json();
 
-    const data = await res.json();
+      if (!data.files) { alert(data.error || "Login failed"); return; }
 
-    if(!data.files) { alert(data.error || JSON.stringify(data)); return; }
+      currentBucket = data.bucket;
+      renderFileList(data.files);
 
-    currentBucket = data.bucket;
-    renderFileList(data.files);
+    } catch (err) {
+      alert("Login error: " + err.message);
+      console.error(err);
+    }
   }
 
   // -----------------------------
@@ -164,43 +174,63 @@ SPIDER
   // VIEW FILE
   // -----------------------------
   async function viewFile(filename){
-    const res = await fetch(API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ action:"get_file_url", bucket:currentBucket, filename })
-    });
-    const data = await res.json();
-    window.open(data.url, "_blank");
+    try {
+      const res = await fetch(API_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ action:"get_file_url", bucket:currentBucket, filename })
+      });
+      const data = await res.json();
+      if (data.url) window.open(data.url, "_blank");
+      else alert("Failed to get file URL");
+    } catch(err){
+      alert("View file error: " + err.message);
+      console.error(err);
+    }
   }
 
   // -----------------------------
   // DOWNLOAD FILE
   // -----------------------------
   async function downloadFile(filename){
-    const res = await fetch(API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ action:"get_file_url", bucket:currentBucket, filename })
-    });
-    const data = await res.json();
-    const a = document.createElement("a");
-    a.href = data.url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      const res = await fetch(API_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ action:"get_file_url", bucket:currentBucket, filename })
+      });
+      const data = await res.json();
+      if (!data.url) { alert("Failed to get file URL"); return; }
+
+      const a = document.createElement("a");
+      a.href = data.url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+    } catch(err){
+      alert("Download error: " + err.message);
+      console.error(err);
+    }
   }
 
   // -----------------------------
   // DELETE FILE
   // -----------------------------
   async function deleteFile(filename){
-    await fetch(API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ action:"delete", bucket:currentBucket, filename })
-    });
-    login(); // refresh file list
+    if(!confirm(`Are you sure you want to delete "${filename}"?`)) return;
+    try {
+      await fetch(API_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ action:"delete", bucket:currentBucket, filename })
+      });
+      login(); // refresh file list
+    } catch(err){
+      alert("Delete error: " + err.message);
+      console.error(err);
+    }
   }
 
   // -----------------------------
@@ -216,20 +246,26 @@ SPIDER
 
     reader.onload = async function(){
       const fileContent = reader.result.split(",")[1];
-      await fetch(API_URL,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          action:"upload",
-          username: document.getElementById("username").value,
-          password: document.getElementById("password").value,
-          uid: document.getElementById("uid").value,
-          bucket: currentBucket,
-          filename: file.name,
-          content: fileContent
-        })
-      });
-      login(); // refresh file list
+      try {
+        await fetch(API_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            action:"upload",
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value,
+            uid: document.getElementById("uid").value,
+            bucket: currentBucket,
+            filename: file.name,
+            content: fileContent
+          })
+        });
+        fileInput.value = ""; // clear file input
+        login(); // refresh file list
+      } catch(err){
+        alert("Upload error: " + err.message);
+        console.error(err);
+      }
     };
     reader.readAsDataURL(file);
   }
@@ -265,7 +301,6 @@ SPIDER
 
       for(let start=0; start<file.size; start+=chunkSize){
         const chunk = file.slice(start, start+chunkSize);
-
         const presignRes = await fetch(API_URL,{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -278,8 +313,11 @@ SPIDER
           })
         });
         const { url } = await presignRes.json();
+        if(!url) throw new Error("Failed to get presigned URL for part " + partNumber);
         const uploadRes = await fetch(url,{ method:"PUT", body:chunk });
-        parts.push({ ETag: uploadRes.headers.get("ETag").replace(/"/g,""), PartNumber: partNumber });
+        const eTag = uploadRes.headers.get("ETag")?.replace(/"/g,"");
+        if(!eTag) throw new Error("Missing ETag for part " + partNumber);
+        parts.push({ ETag: eTag, PartNumber: partNumber });
         partNumber++;
       }
 
@@ -298,6 +336,7 @@ SPIDER
       if(!completeData.success) throw new Error("Multipart completion failed");
 
       alert("Large file upload complete!");
+      fileInput.value = "";
       login();
 
     } catch(err){
@@ -312,10 +351,16 @@ SPIDER
   function copyUID(){
     const uidField = document.getElementById("uid");
     if(!uidField.value){ alert("No UID to copy."); return; }
-    uidField.select();
-    uidField.setSelectionRange(0, 99999);
-    document.execCommand("copy");
-    alert("UID copied to clipboard!");
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(uidField.value)
+        .then(()=>alert("UID copied to clipboard!"))
+        .catch(err=>alert("Clipboard error: "+err));
+    } else {
+      uidField.select();
+      document.execCommand("copy");
+      alert("UID copied to clipboard!");
+    }
   }
 </script>
 
