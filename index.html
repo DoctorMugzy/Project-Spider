@@ -3,7 +3,10 @@
 <head>
   <title>Project Spider User Portal</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+    }
 
     .container {
       display: flex;
@@ -12,15 +15,39 @@
     .left {
       width: 300px;
       margin-right: 50px;
+      background-color: #f5f5dc; /* Beige */
+      padding: 20px;
+      border-radius: 8px;
     }
 
     .right {
       flex: 1;
+      background-color: #0b1f3a; /* Dark Blue */
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
     }
 
-    input { margin: 5px 0; padding: 5px; width: 200px; }
-    button { margin: 5px 5px 5px 0; padding: 5px 10px; }
-    #files { margin-top: 10px; }
+    input { 
+      margin: 5px 0; 
+      padding: 5px; 
+      width: 200px; 
+    }
+
+    button { 
+      margin: 5px 5px 5px 0; 
+      padding: 5px 10px; 
+      cursor: pointer;
+    }
+
+    #files { 
+      margin-top: 10px; 
+    }
+
+  /* Make file names readable on dark background */
+    .right li {
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
@@ -283,3 +310,4 @@ SPIDER
 </script>
 </body>
 </html>
+
