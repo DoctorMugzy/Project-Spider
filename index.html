@@ -44,7 +44,7 @@
       margin-top: 10px; 
     }
 
-  /* Make file names readable on dark background */
+    /* Make file names readable on dark background */
     .right li {
       margin-bottom: 8px;
     }
@@ -114,7 +114,7 @@ SPIDER
 
     if(data.bucket) currentBucket = data.bucket;
 
-    /* NEW: Auto-fill UID after signup */
+    // Auto-fill UID after signup
     if(data.uid){
       document.getElementById("uid").value = data.uid;
     }
@@ -145,13 +145,11 @@ SPIDER
 
       data.files.forEach(f => {
         const li = document.createElement("li");
-
         li.innerHTML = `
           ${f}
           <button onclick="viewFile('${f}')">View</button>
           <button onclick="deleteFile('${f}')">Delete</button>
         `;
-
         ul.appendChild(li);
       });
 
@@ -222,79 +220,90 @@ SPIDER
     login();
   }
 
-  async function uploadMultipart(){
-
+  async function uploadMultipart() {
     const fileInput = document.getElementById("fileInput");
     if(!fileInput.files.length) { alert("Select a file first."); return; }
     if(!currentBucket) { alert("Log in first."); return; }
 
     const file = fileInput.files[0];
 
-    const startRes = await fetch(API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        action:"start_multipart",
-        username: document.getElementById("username").value,
-        password: document.getElementById("password").value,
-        uid: document.getElementById("uid").value,
-        filename:file.name
-      })
-    });
-
-    const {uploadId} = await startRes.json();
-
-    const chunkSize = 5 * 1024 * 1024;
-    const parts=[];
-    let partNumber=1;
-
-    for(let start=0;start<file.size;start+=chunkSize){
-      const chunk = file.slice(start,start+chunkSize);
-
-      const urlRes = await fetch(API_URL,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          action:"get_presigned_part",
-          uploadId,
-          filename:file.name,
-          partNumber,
-          bucket:currentBucket
+    try {
+      // 1️⃣ Start multipart upload
+      const startRes = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "start_multipart",
+          username: document.getElementById("username").value,
+          password: document.getElementById("password").value,
+          uid: document.getElementById("uid").value,
+          filename: file.name
         })
       });
 
-      const {url} = await urlRes.json();
+      const { uploadId } = await startRes.json();
+      if (!uploadId) throw new Error("Failed to get uploadId");
 
-      const uploadRes = await fetch(url,{
-        method:"PUT",
-        body:chunk
+      const chunkSize = 5 * 1024 * 1024; // 5MB
+      const parts = [];
+      let partNumber = 1;
+
+      // 2️⃣ Upload each chunk directly to S3
+      for (let start = 0; start < file.size; start += chunkSize) {
+        const chunk = file.slice(start, start + chunkSize);
+
+        const presignRes = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "get_presigned_part",
+            uploadId,
+            filename: file.name,
+            partNumber,
+            bucket: currentBucket
+          })
+        });
+
+        const { url } = await presignRes.json();
+        if (!url) throw new Error("Failed to get presigned URL");
+
+        // ⚠️ Only send the chunk, no extra headers
+        const uploadRes = await fetch(url, { method: "PUT", body: chunk });
+        if (!uploadRes.ok) throw new Error(`Chunk ${partNumber} upload failed`);
+
+        parts.push({
+          ETag: uploadRes.headers.get("ETag").replace(/"/g, ""),
+          PartNumber: partNumber
+        });
+
+        partNumber++;
+      }
+
+      // 3️⃣ Complete multipart upload
+      const completeRes = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "complete_multipart",
+          bucket: currentBucket,
+          filename: file.name,
+          uploadId,
+          parts
+        })
       });
 
-      parts.push({
-        ETag: uploadRes.headers.get("ETag").replace(/"/g,""),
-        PartNumber: partNumber
-      });
+      const completeData = await completeRes.json();
+      if (!completeData.success) throw new Error("Multipart completion failed");
 
-      partNumber++;
+      alert("Large file upload complete!");
+      login(); // refresh file list
+
+    } catch (err) {
+      console.error("Multipart upload error:", err);
+      alert("Error uploading large file: " + err.message);
     }
-
-    await fetch(API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        action:"complete_multipart",
-        bucket:currentBucket,
-        filename:file.name,
-        uploadId,
-        parts
-      })
-    });
-
-    alert("Large file upload complete!");
-    login();
   }
 
-  /* NEW COPY FUNCTION */
   function copyUID() {
     const uidField = document.getElementById("uid");
     if(!uidField.value){
@@ -310,4 +319,3 @@ SPIDER
 </script>
 </body>
 </html>
-
