@@ -83,7 +83,7 @@ SPIDER
     <h3>Upload a file:</h3>
     <input type="file" id="fileInput" />
     <button onclick="uploadFile()">Upload</button>
-    <button onclick="uploadMultipart()">Upload Large File (5MB+)</button>
+    <button onclick="uploadMultipart()">Upload Large File (5MB+) (Non-Functional For Now)</button>
 
     <h3>Files in your bucket:</h3>
     <ul id="files"></ul>
@@ -181,8 +181,11 @@ SPIDER
         body:JSON.stringify({ action:"get_file_url", bucket:currentBucket, filename })
       });
       const data = await res.json();
-      if (data.url) window.open(data.url, "_blank");
-      else alert("Failed to get file URL");
+    
+      if (!data.url) { alert("Failed to get file URL"); return; }
+
+      // Open in new tab
+      window.open(data.url, "_blank");
     } catch(err){
       alert("View file error: " + err.message);
       console.error(err);
@@ -200,21 +203,29 @@ SPIDER
         body:JSON.stringify({ action:"get_file_url", bucket:currentBucket, filename })
       });
       const data = await res.json();
+
       if (!data.url) { alert("Failed to get file URL"); return; }
 
+        // Fetch file as blob
+      const fileRes = await fetch(data.url);
+      const blob = await fileRes.blob();
+
+      // Create temporary download link
       const a = document.createElement("a");
-      a.href = data.url;
+      const url = window.URL.createObjectURL(blob);
+      a.href = url;
       a.download = filename;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      a.remove();
+      window.URL.revokeObjectURL(url);
 
     } catch(err){
       alert("Download error: " + err.message);
       console.error(err);
     }
   }
-
+  
   // -----------------------------
   // DELETE FILE
   // -----------------------------
@@ -366,3 +377,4 @@ SPIDER
 
 </body>
 </html>
+
