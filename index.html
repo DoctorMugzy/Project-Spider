@@ -277,30 +277,35 @@ SPIDER
     if (!fileInput.files.length) { alert("Select a file first."); return; }
     if (!currentBucket)          { alert("Log in first.");        return; }
 
-    const file   = fileInput.files[0];
-    const reader = new FileReader();
+    const file = fileInput.files[0];
 
+    // Warn early on the frontend — anything over ~6MB will fail through API Gateway
+    if (file.size > 6 * 1024 * 1024) {
+        setStatus("File is too large for direct upload. Use the 'Upload Large File' button instead.");
+        return;
+    }
+
+    const reader = new FileReader();
     reader.onload = async function() {
-      setStatus(`Uploading ${file.name}...`);
-      const fileContent = reader.result.split(",")[1];
-      const res = await fetch(API_URL, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          action:   "upload",
-          bucket:   currentBucket,
-          filename: file.name,
-          content:  fileContent,
-          ...currentUser
-        })
-      });
-      const data = await res.json();
-      setStatus(data.success ? `${file.name} uploaded.` : (data.error || "Upload failed."));
-      if (data.success) login(); // refresh file list
+        setStatus(`Uploading ${file.name}...`);
+        const fileContent = reader.result.split(",")[1];
+        const res = await fetch(API_URL, {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({
+                action:   "upload",
+                bucket:   currentBucket,
+                filename: file.name,
+                content:  fileContent,
+                ...currentUser
+            })
+        });
+        const data = await res.json();
+        setStatus(data.success ? `${file.name} uploaded.` : (data.error || "Upload failed."));
+        if (data.success) login();
     };
     reader.readAsDataURL(file);
   }
-
   // -----------------------------
   // MULTIPART UPLOAD
   // -----------------------------
