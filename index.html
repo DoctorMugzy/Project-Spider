@@ -1,100 +1,453 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Project Spider User Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      margin: 20px; 
+    /* ── TOKENS ── */
+    :root {
+      --bg:        #eef4f9;
+      --panel-l:   #ffffff;
+      --panel-r:   #f7fbff;
+      --border:    #b8d4e8;
+      --border-hi: #7ab3d4;
+      --text:      #2c4a5e;
+      --text-dim:  #7a9baf;
+      --accent:    #3a8fc4;
+      --accent2:   #1e6fa0;
+      --danger:    #c0444a;
+      --success:   #2e8a5a;
+      --thread:    rgba(120,180,220,0.18);
+      --mono:      'DM Mono', monospace;
+      --sans:      'DM Sans', sans-serif;
+      --radius:    6px;
     }
 
-    .container {
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 28px 16px;
+      background-image:
+        repeating-linear-gradient(0deg,   transparent, transparent 59px, var(--thread) 60px),
+        repeating-linear-gradient(90deg,  transparent, transparent 59px, var(--thread) 60px);
     }
 
-    .left {
-      width: 300px;
-      margin-right: 50px;
-      background-color: #f5f5dc;
-      padding: 20px;
-      border-radius: 8px;
+    /* ── HEADER ── */
+    header {
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+    header h1 {
+      font-family: var(--sans);
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent2);
+    }
+    header span {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--text-dim);
+      letter-spacing: .06em;
     }
 
-    .right {
-      flex: 1;
-      background-color: #0b1f3a;
-      color: white;
-      padding: 20px;
-      border-radius: 8px;
+    /* ── LAYOUT ── */
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
     }
 
-    input { 
-      margin: 5px 0; 
-      padding: 5px; 
-      width: 200px; 
+    /* ── PANELS ── */
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(60,120,180,0.07);
+    }
+    .panel-left  { width: 290px; flex-shrink: 0; background: var(--panel-l); }
+    .panel-right { flex: 1; background: var(--panel-r); }
+
+    .panel-label {
+      font-family: var(--sans);
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
     }
 
-    button { 
-      margin: 5px 5px 5px 0; 
-      padding: 5px 10px; 
+    /* ── SPIDER ASCII ── */
+    pre#spider {
+      font-family: 'DM Mono', monospace;
+      font-size: .78rem;
+      line-height: 1.4;
+      color: var(--accent);
+      white-space: pre;
+      margin-bottom: 18px;
+      letter-spacing: .04em;
+    }
+
+    /* ── FORM ELEMENTS ── */
+    .field { margin-bottom: 10px; }
+    .field label {
+      display: block;
+      font-family: var(--sans);
+      font-size: .72rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    .field input {
+      width: 100%;
+      background: #f0f7fc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .82rem;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(58,143,196,0.12);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--sans);
+      font-size: .78rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-hi);
+      background: #e4f1fa;
+      color: var(--accent2);
       cursor: pointer;
+      transition: background .15s, border-color .15s, box-shadow .15s;
+      white-space: nowrap;
     }
+    .btn:hover { background: #cce5f5; border-color: var(--accent); box-shadow: 0 1px 4px rgba(58,143,196,0.15); }
+    .btn:active { background: #b8d8ef; }
 
-    #files { 
-      margin-top: 10px; 
-      list-style: none;
-      padding-left: 0;
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent2);
+      color: #fff;
+      font-weight: 600;
     }
+    .btn-primary:hover { background: var(--accent2); border-color: #155a82; }
 
-    .right li {
-      margin-bottom: 8px;
-    }
+    .btn-danger  { border-color: #e08084; color: var(--danger); background: #fdf0f0; }
+    .btn-danger:hover { background: #fadddd; border-color: var(--danger); }
+    .btn-sm { font-size: .7rem; padding: 4px 10px; }
 
+    /* ── BUTTON ROW ── */
+    .btn-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .uid-row { display: flex; gap: 6px; align-items: flex-end; }
+    .uid-row .field { flex: 1; margin-bottom: 0; }
+
+    /* ── STATUS ── */
     #status {
-      margin-top: 8px;
-      font-size: 13px;
-      color: #555;
-      min-height: 18px;
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--text-dim);
+      margin-top: 12px;
+      min-height: 16px;
+      transition: color .2s;
+    }
+    #status.ok  { color: var(--success); }
+    #status.err { color: var(--danger); }
+
+    /* ── PROGRESS BAR ── */
+    #progress-wrap {
+      margin-top: 12px;
+      display: none;
+    }
+    #progress-wrap.active { display: block; }
+    #progress-track {
+      height: 5px;
+      background: #d0e8f5;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    #progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width .25s ease;
+    }
+    #progress-fill.indeterminate {
+      width: 40%;
+      animation: indeterminate 1.2s infinite ease-in-out;
+    }
+    @keyframes indeterminate {
+      0%   { transform: translateX(-150%); }
+      100% { transform: translateX(350%); }
+    }
+    #progress-label {
+      font-family: var(--mono);
+      font-size: .63rem;
+      color: var(--text-dim);
+    }
+
+    /* ── CAPTCHA ── */
+    #captcha-area {
+      margin-top: 14px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #f0f7fc;
+    }
+    #captcha-area .captcha-q {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--text);
+      margin-bottom: 7px;
+    }
+    #captcha-area .captcha-display {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      letter-spacing: .25em;
+      color: var(--accent2);
+      background: rgba(0,0,0,.4);
+      padding: 5px 10px;
+      border-radius: var(--radius);
+      display: inline-block;
+      margin-bottom: 7px;
+      user-select: none;
+      font-style: italic;
+    }
+
+    /* ── FILE SECTION ── */
+    .file-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #fileInput {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--text-dim);
+      background: rgba(0,0,0,.3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 5px 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    #fileInput::file-selector-button {
+      font-family: var(--mono);
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      background: rgba(77,163,212,.12);
+      border: 1px solid var(--border-hi);
+      color: var(--accent2);
+      padding: 3px 9px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      margin-right: 8px;
+    }
+
+    /* ── FILE LIST ── */
+    #files { list-style: none; }
+    #files li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: .75rem;
+      color: var(--text);
+    }
+    #files li:last-child { border-bottom: none; }
+    .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── FILE VIEWER ── */
+    #viewer-wrap {
+      display: none;
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    #viewer-wrap.active { display: block; }
+    #viewer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 12px;
+      background: rgba(0,0,0,.4);
+      border-bottom: 1px solid var(--border);
+    }
+    #viewer-filename {
+      font-family: var(--mono);
+      font-size: .68rem;
+      color: var(--text-dim);
+      letter-spacing: .08em;
+    }
+    #viewer-close {
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--danger);
+      cursor: pointer;
+      background: none;
+      border: none;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    #viewer-close:hover { color: #ff6a70; }
+    #viewer-content {
+      width: 100%;
+      max-height: 420px;
+      display: block;
+      background: #000;
+    }
+    #viewer-content.text-view {
+      background: rgba(0,0,0,.5);
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: .72rem;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre-wrap;
+      overflow: auto;
+      max-height: 420px;
+    }
+    #viewer-frame {
+      width: 100%;
+      height: 420px;
+      border: none;
+      display: block;
+      background: #fff;
     }
   </style>
 </head>
 <body>
 
+<header>
+  <h1>Project Spider</h1>
+  <span>// serverless file portal v2</span>
+</header>
+
 <div class="container">
 
-  <!-- LEFT SIDE -->
-  <div class="left">
-<pre>
-PROJECT
+  <!-- ── LEFT PANEL ── -->
+  <div class="panel panel-left">
+    <div class="panel-label">// access</div>
+
+    <pre id="spider">
+ PROJECT
   / _ \
 \_\(_)/_/
- _//o\\_ 
+ _//o\\_
   /   \
-SPIDER
-</pre>
+ SPIDER</pre>
 
-    <h2>Sign Up / Log In</h2>
-    <input id="username" placeholder="Username" />
-    <br/>
-    <input id="password" placeholder="Password" type="password" />
-    <br/>
-    <input id="uid" placeholder="UID (Required for Login)" />
-    <button onclick="copyUID()">Copy UID</button>
-    <br/>
-    <button onclick="signup()">Sign Up</button>
-    <button onclick="login()">Log In</button>
+    <div class="field">
+      <label>Username</label>
+      <input id="username" placeholder="your_name" autocomplete="off" />
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input id="password" type="password" placeholder="••••••••" />
+    </div>
+
+    <div class="uid-row">
+      <div class="field">
+        <label>UID <span style="color:var(--text-dim);font-size:.58rem;">(required for login)</span></label>
+        <input id="uid" placeholder="e.g. ab12345678" autocomplete="off" />
+      </div>
+      <button class="btn btn-sm" onclick="copyUID()" style="margin-bottom:0;height:32px;">⎘ Copy</button>
+    </div>
+
+    <!-- CAPTCHA (shown only during signup) -->
+    <div id="captcha-area" style="display:none;">
+      <div class="captcha-q">Type the characters shown below:</div>
+      <div class="captcha-display" id="captcha-display"></div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Captcha</label>
+        <input id="captcha-input" placeholder="" autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="showCaptchaAndSignup()">Sign Up</button>
+      <button class="btn btn-primary" onclick="login()">Log In</button>
+    </div>
+
     <div id="status"></div>
+
+    <div id="progress-wrap">
+      <div id="progress-track"><div id="progress-fill"></div></div>
+      <div id="progress-label"></div>
+    </div>
   </div>
 
-  <!-- RIGHT SIDE -->
-  <div class="right">
-    <h3>Upload a file:</h3>
-    <input type="file" id="fileInput" />
-    <button onclick="uploadFile()">Upload</button>
-    <button onclick="uploadMultipart()">Upload Large File (5MB+)</button>
+  <!-- ── RIGHT PANEL ── -->
+  <div class="panel panel-right">
+    <div class="panel-label">// storage</div>
 
-    <h3>Files in your bucket:</h3>
-    <ul id="files"></ul>
+    <div class="file-controls">
+      <input type="file" id="fileInput" />
+      <button class="btn btn-primary" onclick="uploadFile()">↑ Upload</button>
+      <button class="btn" onclick="uploadMultipart()" title="For files 5 MB+">↑ Large (5MB+)</button>
+    </div>
+
+    <div class="panel-label" style="margin-bottom:10px;">// files in your bucket</div>
+    <ul id="files"><li style="font-family:var(--mono);font-size:.72rem;color:var(--text-dim);">Log in to see files.</li></ul>
+
+    <!-- Inline File Viewer -->
+    <div id="viewer-wrap">
+      <div id="viewer-bar">
+        <span id="viewer-filename"></span>
+        <button id="viewer-close" onclick="closeViewer()">✕ Close</button>
+      </div>
+      <!-- used for images / PDFs -->
+      <iframe id="viewer-frame" style="display:none;"></iframe>
+      <!-- used for text -->
+      <div id="viewer-text" class="text-view" style="display:none;"></div>
+      <!-- used for other media -->
+      <img id="viewer-img" style="display:none;max-width:100%;max-height:420px;object-fit:contain;background:#111;" />
+    </div>
   </div>
 
 </div>
@@ -103,12 +456,60 @@ SPIDER
   const API_URL = "https://eu4gu0tc83.execute-api.us-east-2.amazonaws.com/spoder/user";
   let currentBucket = "";
   let currentUser   = { username: "", password: "", uid: "" };
+  let captchaAnswer = "";
 
-  function setStatus(msg) {
-    document.getElementById("status").textContent = msg;
+  // ── STATUS ──────────────────────────────────────────────
+  function setStatus(msg, type = "") {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = type; // "ok" | "err" | ""
   }
 
-  // Store credentials in one place so all functions stay in sync
+  // ── PROGRESS ─────────────────────────────────────────────
+  function showProgress(label, pct = null) {
+    const wrap  = document.getElementById("progress-wrap");
+    const fill  = document.getElementById("progress-fill");
+    const lbl   = document.getElementById("progress-label");
+    wrap.classList.add("active");
+    lbl.textContent = label;
+    if (pct === null) {
+      fill.classList.add("indeterminate");
+      fill.style.width = "";
+    } else {
+      fill.classList.remove("indeterminate");
+      fill.style.width = pct + "%";
+    }
+  }
+  function hideProgress() {
+    document.getElementById("progress-wrap").classList.remove("active");
+    document.getElementById("progress-fill").classList.remove("indeterminate");
+    document.getElementById("progress-fill").style.width = "0%";
+    document.getElementById("progress-label").textContent = "";
+  }
+
+  // ── CAPTCHA ──────────────────────────────────────────────
+  const CAPTCHA_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  function generateCaptcha(len = 5) {
+    let s = "";
+    for (let i = 0; i < len; i++) s += CAPTCHA_CHARS[Math.floor(Math.random() * CAPTCHA_CHARS.length)];
+    return s;
+  }
+  function showCaptchaAndSignup() {
+    const area = document.getElementById("captcha-area");
+    if (area.style.display === "none") {
+      // First click: reveal captcha
+      captchaAnswer = generateCaptcha();
+      document.getElementById("captcha-display").textContent = captchaAnswer;
+      document.getElementById("captcha-input").value = "";
+      area.style.display = "block";
+      setStatus("Complete the captcha, then click Sign Up again.", "");
+    } else {
+      // Second click: validate and sign up
+      signup();
+    }
+  }
+
+  // ── CREDENTIALS ──────────────────────────────────────────
   function readCredentials() {
     return {
       username: document.getElementById("username").value.trim(),
@@ -117,294 +518,287 @@ SPIDER
     };
   }
 
-  // -----------------------------
-  // SIGNUP
-  // -----------------------------
+  // ── SIGNUP ───────────────────────────────────────────────
   async function signup() {
     const { username, password } = readCredentials();
-    if (!username || !password) { alert("Enter both username and password."); return; }
+    if (!username || !password) { setStatus("Enter username and password.", "err"); return; }
 
-    setStatus("Signing up...");
-    const res  = await fetch(API_URL, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ action: "signup", username, password })
-    });
-    const data = await res.json();
-
-    if (data.uid) {
-      document.getElementById("uid").value = data.uid;
-      currentBucket = data.bucket;
-      currentUser   = { username, password, uid: data.uid };
-      setStatus(`Signed up! Your UID is ${data.uid} — copy it now, you need it to log in.`);
-    } else {
-      setStatus(data.error || "Signup failed.");
+    const userInput = document.getElementById("captcha-input").value.trim().toUpperCase();
+    if (userInput !== captchaAnswer) {
+      captchaAnswer = generateCaptcha();
+      document.getElementById("captcha-display").textContent = captchaAnswer;
+      document.getElementById("captcha-input").value = "";
+      setStatus("Captcha incorrect — try again.", "err");
+      return;
     }
+
+    showProgress("Creating account…");
+    setStatus("Signing up…", "");
+    try {
+      const res  = await fetch(API_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ action: "signup", username, password })
+      });
+      const data = await res.json();
+      if (data.uid) {
+        document.getElementById("uid").value = data.uid;
+        currentBucket = data.bucket;
+        currentUser   = { username, password, uid: data.uid };
+        document.getElementById("captcha-area").style.display = "none";
+        setStatus(`Signed up! UID: ${data.uid} — copy it now.`, "ok");
+      } else {
+        setStatus(data.error || "Signup failed.", "err");
+      }
+    } catch(e) { setStatus("Network error.", "err"); }
+    hideProgress();
   }
 
-  // -----------------------------
-  // LOGIN
-  // -----------------------------
+  // ── LOGIN ────────────────────────────────────────────────
   async function login() {
     const creds = readCredentials();
     if (!creds.username || !creds.password || !creds.uid) {
-      alert("Enter username, password, and UID.");
-      return;
+      setStatus("Username, password, and UID required.", "err"); return;
     }
-
-    setStatus("Logging in...");
-    const res  = await fetch(API_URL, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ action: "login", ...creds })
-    });
-    const data = await res.json();
-
-    if (!data.files) {
-      setStatus(data.error || "Login failed.");
-      return;
-    }
-
-    currentBucket = data.bucket;
-    currentUser   = creds;
-    setStatus("Logged in.");
-    renderFileList(data.files);
+    showProgress("Authenticating…");
+    setStatus("Logging in…", "");
+    try {
+      const res  = await fetch(API_URL, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ action: "login", ...creds })
+      });
+      const data = await res.json();
+      if (!data.files) { setStatus(data.error || "Login failed.", "err"); hideProgress(); return; }
+      currentBucket = data.bucket;
+      currentUser   = creds;
+      setStatus("Logged in.", "ok");
+      renderFileList(data.files);
+    } catch(e) { setStatus("Network error.", "err"); }
+    hideProgress();
   }
 
-  // -----------------------------
-  // RENDER FILE LIST
-  // -----------------------------
+  // ── FILE LIST ────────────────────────────────────────────
   function renderFileList(files) {
     const ul = document.getElementById("files");
     ul.innerHTML = "";
-
     if (!files.length) {
-      ul.innerHTML = "<li>No files yet.</li>";
+      ul.innerHTML = `<li style="font-family:var(--mono);font-size:.72rem;color:var(--text-dim);">No files yet.</li>`;
       return;
     }
-
     files.forEach(f => {
       const li = document.createElement("li");
       li.innerHTML = `
-        ${f}
-        <button onclick="viewFile('${f}')">View</button>
-        <button onclick="downloadFile('${f}')">Download</button>
-        <button onclick="deleteFile('${f}')">Delete</button>
+        <span class="file-name" title="${f}">${f}</span>
+        <button class="btn btn-sm" onclick="viewFile('${f}')">View</button>
+        <button class="btn btn-sm" onclick="downloadFile('${f}')">↓ DL</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteFile('${f}')">✕</button>
       `;
       ul.appendChild(li);
     });
   }
 
-  // -----------------------------
-  // GET FILE URL
-  // -----------------------------
+  // ── GET FILE URL ─────────────────────────────────────────
   async function getFileUrl(filename) {
-    if (!currentBucket || !currentUser.username) {
-      alert("Log in first!");
-      return null;
-    }
-
+    if (!currentBucket || !currentUser.username) { setStatus("Log in first.", "err"); return null; }
     const res  = await fetch(API_URL, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({
-        action:   "get_file_url",
-        bucket:   currentBucket,
-        filename,
-        ...currentUser
-      })
+      body:    JSON.stringify({ action: "get_file_url", bucket: currentBucket, filename, ...currentUser })
     });
     const data = await res.json();
-
-    if (!data.url) {
-      alert(data.error || "Failed to get file URL");
-      return null;
-    }
+    if (!data.url) { setStatus(data.error || "Failed to get file URL.", "err"); return null; }
     return data.url;
   }
 
-  // -----------------------------
-  // VIEW FILE
-  // -----------------------------
+  // ── VIEW FILE (inline) ────────────────────────────────────
   async function viewFile(filename) {
+    showProgress("Fetching file…");
     const url = await getFileUrl(filename);
-    if (url) window.open(url, "_blank");
-  }
-
-  // -----------------------------
-  // DOWNLOAD FILE
-  // -----------------------------
-  async function downloadFile(filename) {
-    const url = await getFileUrl(filename);
+    hideProgress();
     if (!url) return;
 
-    const fileRes = await fetch(url);
-    const blob    = await fileRes.blob();
-    const a       = document.createElement("a");
-    const blobUrl = window.URL.createObjectURL(blob);
-    a.href     = blobUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(blobUrl);
+    const ext = filename.split('.').pop().toLowerCase();
+    const wrap  = document.getElementById("viewer-wrap");
+    const frame = document.getElementById("viewer-frame");
+    const textEl = document.getElementById("viewer-text");
+    const imgEl  = document.getElementById("viewer-img");
+
+    // Reset
+    frame.style.display = "none"; frame.src = "";
+    textEl.style.display = "none"; textEl.textContent = "";
+    imgEl.style.display  = "none"; imgEl.src = "";
+    document.getElementById("viewer-filename").textContent = filename;
+    wrap.classList.add("active");
+    wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    const imageExts = ["png","jpg","jpeg","gif","webp","svg","bmp","ico"];
+    const textExts  = ["txt","md","csv","json","xml","html","htm","js","py","sh","log","yml","yaml","toml","ini","css"];
+
+    if (imageExts.includes(ext)) {
+      imgEl.src = url;
+      imgEl.style.display = "block";
+    } else if (textExts.includes(ext)) {
+      try {
+        const r = await fetch(url);
+        textEl.textContent = await r.text();
+      } catch(e) { textEl.textContent = "[Could not load file]"; }
+      textEl.style.display = "block";
+    } else if (ext === "pdf") {
+      frame.src = url;
+      frame.style.display = "block";
+    } else {
+      // Fallback: try iframe
+      frame.src = url;
+      frame.style.display = "block";
+    }
   }
 
-  // -----------------------------
-  // DELETE FILE
-  // -----------------------------
+  function closeViewer() {
+    const wrap = document.getElementById("viewer-wrap");
+    wrap.classList.remove("active");
+    document.getElementById("viewer-frame").src = "";
+    document.getElementById("viewer-text").textContent = "";
+    document.getElementById("viewer-img").src = "";
+  }
+
+  // ── DOWNLOAD ─────────────────────────────────────────────
+  async function downloadFile(filename) {
+    showProgress("Preparing download…");
+    const url = await getFileUrl(filename);
+    if (!url) { hideProgress(); return; }
+    const fileRes = await fetch(url);
+    const blob    = await fileRes.blob();
+    hideProgress();
+    const a = document.createElement("a");
+    a.href = window.URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  // ── DELETE ───────────────────────────────────────────────
   async function deleteFile(filename) {
-    setStatus("Deleting...");
+    if (!confirm(`Delete "${filename}"?`)) return;
+    showProgress("Deleting…");
+    setStatus("Deleting…", "");
     await fetch(API_URL, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({
-        action:   "delete",
-        bucket:   currentBucket,
-        filename,
-        ...currentUser
-      })
+      body:    JSON.stringify({ action: "delete", bucket: currentBucket, filename, ...currentUser })
     });
-    setStatus("Deleted.");
-    login(); // refresh file list
+    hideProgress();
+    setStatus("Deleted.", "ok");
+    login();
   }
 
-  // -----------------------------
-  // UPLOAD FILE
-  // -----------------------------
+  // ── UPLOAD (small) ───────────────────────────────────────
   async function uploadFile() {
     const fileInput = document.getElementById("fileInput");
-    if (!fileInput.files.length) { alert("Select a file first."); return; }
-    if (!currentBucket)          { alert("Log in first.");        return; }
-
+    if (!fileInput.files.length) { setStatus("Select a file first.", "err"); return; }
+    if (!currentBucket)          { setStatus("Log in first.", "err"); return; }
     const file = fileInput.files[0];
-
-    // Warn early on the frontend — anything over ~6MB will fail through API Gateway
     if (file.size > 6 * 1024 * 1024) {
-        setStatus("File is too large for direct upload. Use the 'Upload Large File' button instead.");
-        return;
+      setStatus("File too large — use 'Large (5MB+)' button.", "err"); return;
     }
-
     const reader = new FileReader();
     reader.onload = async function() {
-        setStatus(`Uploading ${file.name}...`);
-        const fileContent = reader.result.split(",")[1];
-        const res = await fetch(API_URL, {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({
-                action:   "upload",
-                bucket:   currentBucket,
-                filename: file.name,
-                content:  fileContent,
-                ...currentUser
-            })
+      showProgress("Uploading…");
+      setStatus(`Uploading ${file.name}…`, "");
+      const fileContent = reader.result.split(",")[1];
+      try {
+        const res  = await fetch(API_URL, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ action: "upload", bucket: currentBucket, filename: file.name, content: fileContent, ...currentUser })
         });
         const data = await res.json();
-        setStatus(data.success ? `${file.name} uploaded.` : (data.error || "Upload failed."));
-        if (data.success) login();
+        if (data.success) { setStatus(`${file.name} uploaded.`, "ok"); login(); }
+        else { setStatus(data.error || "Upload failed.", "err"); }
+      } catch(e) { setStatus("Network error.", "err"); }
+      hideProgress();
     };
     reader.readAsDataURL(file);
   }
-  // -----------------------------
-  // MULTIPART UPLOAD
-  // -----------------------------
+
+  // ── MULTIPART UPLOAD ─────────────────────────────────────
   async function uploadMultipart() {
     const fileInput = document.getElementById("fileInput");
-    if (!fileInput.files.length) { alert("Select a file first."); return; }
-    if (!currentBucket)          { alert("Log in first.");        return; }
-
+    if (!fileInput.files.length) { setStatus("Select a file first.", "err"); return; }
+    if (!currentBucket)          { setStatus("Log in first.", "err");        return; }
     const file = fileInput.files[0];
-
     try {
-      setStatus("Starting multipart upload...");
+      showProgress("Starting multipart upload…", 0);
+      setStatus(`Starting upload for ${file.name}…`, "");
 
-      // 1. Start — bucket comes back from server, not sent by client
+      // 1. Start
       const startRes  = await fetch(API_URL, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          action:   "start_multipart",
-          filename: file.name,
-          ...currentUser
-        })
+        body:    JSON.stringify({ action: "start_multipart", filename: file.name, ...currentUser })
       });
       const startData = await startRes.json();
       if (!startData.uploadId) throw new Error(startData.error || "Failed to get uploadId");
-
       const { uploadId, bucket } = startData;
 
-      // 2. Upload parts
-      const chunkSize = 5 * 1024 * 1024; // 5 MB
-      const parts     = [];
-      let   partNumber = 1;
+      // 2. Parts
+      const chunkSize  = 5 * 1024 * 1024;
       const totalParts = Math.ceil(file.size / chunkSize);
+      const parts      = [];
+      let   partNumber = 1;
 
       for (let start = 0; start < file.size; start += chunkSize) {
-        const chunk = file.slice(start, start + chunkSize);
-        setStatus(`Uploading part ${partNumber} of ${totalParts}...`);
+        const pct   = Math.round(((partNumber - 1) / totalParts) * 90);
+        showProgress(`Uploading part ${partNumber} / ${totalParts}…`, pct);
 
+        const chunk       = file.slice(start, start + chunkSize);
         const presignRes  = await fetch(API_URL, {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
-            action:     "get_presigned_part",
-            uploadId,
-            bucket,
-            filename:   file.name,
-            partNumber,
-            ...currentUser
-          })
+          body:    JSON.stringify({ action: "get_presigned_part", uploadId, bucket, filename: file.name, partNumber, ...currentUser })
         });
-        const { url } = await presignRes.json();
+        const { url }     = await presignRes.json();
+        if (!url) throw new Error(`No presigned URL for part ${partNumber}`);
 
-        const uploadRes = await fetch(url, { method: "PUT", body: chunk });
-        const etag      = uploadRes.headers.get("ETag");
-        if (!etag) throw new Error(`No ETag returned for part ${partNumber}`);
+        const uploadRes   = await fetch(url, { method: "PUT", body: chunk });
+        if (!uploadRes.ok) throw new Error(`Part ${partNumber} upload failed (HTTP ${uploadRes.status})`);
+        const etag        = uploadRes.headers.get("ETag");
+        if (!etag) throw new Error(`No ETag for part ${partNumber}`);
         parts.push({ ETag: etag.replace(/"/g, ""), PartNumber: partNumber });
         partNumber++;
       }
 
       // 3. Complete
-      setStatus("Completing upload...");
+      showProgress("Finalising…", 95);
       const completeRes  = await fetch(API_URL, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          action:   "complete_multipart",
-          bucket,
-          filename: file.name,
-          uploadId,
-          parts,
-          ...currentUser
-        })
+        body:    JSON.stringify({ action: "complete_multipart", bucket, filename: file.name, uploadId, parts, ...currentUser })
       });
       const completeData = await completeRes.json();
       if (!completeData.success) throw new Error("Multipart completion failed");
 
-      setStatus("Large file uploaded successfully.");
-      login(); // refresh file list
+      showProgress("Done.", 100);
+      setStatus("File uploaded successfully.", "ok");
+      setTimeout(hideProgress, 800);
+      login();
 
     } catch (err) {
-      setStatus("Upload error: " + err.message);
-      console.error(err);
+      setStatus("Upload error: " + err.message, "err");
+      hideProgress();
     }
   }
 
-  // -----------------------------
-  // COPY UID
-  // -----------------------------
+  // ── COPY UID ─────────────────────────────────────────────
   async function copyUID() {
     const uid = document.getElementById("uid").value;
-    if (!uid) { alert("No UID to copy."); return; }
+    if (!uid) { setStatus("No UID to copy.", "err"); return; }
     try {
       await navigator.clipboard.writeText(uid);
-      setStatus("UID copied to clipboard.");
+      setStatus("UID copied to clipboard.", "ok");
     } catch {
-      // Fallback for older browsers
       document.getElementById("uid").select();
       document.execCommand("copy");
-      setStatus("UID copied.");
+      setStatus("UID copied.", "ok");
     }
   }
 </script>
